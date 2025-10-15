@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive OSI Model Simulator</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+}
+.container { max-width: 1000px; }
+.osi-layer {
+    background: rgba(34,34,34,0.8);
+    border: 2px solid #444;
+    padding: 20px;
+    margin: 12px 0;
+    border-radius: 12px;
+    transition: all 0.6s ease;
+    font-weight: bold;
+    font-size: 1.2rem;
+    position: relative;
+    overflow: hidden;
+}
+.osi-layer.active {
+    background: #0d6efd;
+    color: #fff;
+    transform: scale(1.08);
+    box-shadow: 0 0 25px #0d6efd;
+    animation: pulse 1s infinite alternate;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px #0d6efd; transform: scale(1.05);}
+    100% { box-shadow: 0 0 25px #0d6efd; transform: scale(1.1);}
+}
+#packet {
+    position: absolute;
+    font-size: 2rem;
+    transition: all 1s ease;
+    left: 45%;
+    top: 150px;
+    z-index: 1000;
+}
+#explanation {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 12px;
+    min-height: 100px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    box-shadow: 0 0 15px rgba(0,0,0,0.6);
+    transition: all 0.5s ease;
+}
+input#userMessage {
+    border-radius: 12px;
+    font-size: 1rem;
+    padding: 10px;
+}
+button#startBtn {
+    border-radius: 12px;
+    padding: 10px 25px;
+    font-size: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+button#startBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #0d6efd;
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #packet { left: 35%; }
+    .osi-layer { font-size: 1rem; padding: 15px; }
+}
+</style>
+</head>
+<body>
+<div class="container text-center mt-5">
+<h1 class="mb-4">Interactive OSI Model Simulator</h1>
+
+<div class="mb-3 d-flex justify-content-center">
+    <input type="text" id="userMessage" class="form-control w-50 me-2" placeholder="Type your message here" />
+    <button id="startBtn" class="btn btn-primary">Send Message</button>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5 col-12 mb-4">
+        <h5>Sending Side (Encapsulation)</h5>
+        <div class="osi-layer" id="send-application" style="background-color: green;">Application</div>
+        <div class="osi-layer" id="send-presentation" style="background-color: #295881;">Presentation</div>
+        <div class="osi-layer" id="send-session" style="background-color: rgb(34, 16, 152);">Session</div>
+        <div class="osi-layer" id="send-transport" style="background-color: rgb(65, 11, 75);">Transport</div>
+        <div class="osi-layer" id="send-network" style="background-color: rgb(105, 15, 63);">Network</div>
+        <div class="osi-layer" id="send-data-link" style="background-color: rgb(242, 9, 118);">Data Link</div>
+        <div class="osi-layer" id="send-physical" style="background-color: rgb(213, 18, 18);">Physical</div>
+    </div>
+    <div class="col-md-5 col-12 mb-4">
+        <h5>Receiving Side (Decapsulation)</h5>
+        <div class="osi-layer" id="recv-physical" style="background-color: rgb(213, 18, 18);">Physical</div>
+        <div class="osi-layer" id="recv-data-link" style="background-color: rgb(242, 9, 118);">Data Link</div>
+        <div class="osi-layer" id="recv-network" style="background-color: rgb(105, 15, 63);">Network</div>
+        <div class="osi-layer" id="recv-transport" style="background-color: rgb(65, 11, 75);">Transport</div>
+        <div class="osi-layer" id="recv-session" style="background-color: rgb(34, 16, 152);">Session</div>
+        <div class="osi-layer" id="recv-presentation" style="background-color: #295881;">Presentation</div>
+        <div class="osi-layer" id="recv-application" style="background-color: green;">Application</div>
+    </div>
+</div>
+
+<div id="explanation"></div>
+<div id="packet">🚩</div>
+</div><br>
+<!-- FOOTER -->
+<footer style="text-align:center; padding:10px; font-size:14px; color:#faf1f1;margin: 40px;">
+  Made with ❤️ by Subham Creation | &copy; 2025 Subham. All rights reserved.
+</footer>
+<script>
+const sendLayers = ["send-application","send-presentation","send-session","send-transport","send-network","send-data-link","send-physical"];
+const recvLayers = ["recv-physical","recv-data-link","recv-network","recv-transport","recv-session","recv-presentation","recv-application"];
+
+const packet = document.getElementById("packet");
+const startBtn = document.getElementById("startBtn");
+const explanation = document.getElementById("explanation");
+const userMessage = document.getElementById("userMessage");
+
+startBtn.addEventListener("click", () => {
+    const message = userMessage.value.trim();
+    if (!message) { alert("Please enter a message."); return; }
+    sendMessage(message);
+});
+
+function sendMessage(message) {
+    let delay = 0;
+    let data = message;
+
+    const transformations = [
+        {layer: "Application", desc: `Application Layer: Original Message → "${data}"`, func: d => d},
+        {layer: "Presentation", desc: "", func: d => { 
+            const encoded = btoa(d); 
+            transformations[1].desc = `Presentation Layer: Encoded in Base64 → "${encoded}"`;
+            return encoded; 
+        }},
+        {layer: "Session", desc: "", func: d => { 
+            const sessionId = "SID123"; 
+            transformations[2].desc = `Session Layer: Added session ID → "${d}|${sessionId}"`;
+            return d + "|" + sessionId; 
+        }},
+        {layer: "Transport", desc: "", func: d => { 
+            const ports = "SRC:5000|DST:80"; 
+            transformations[3].desc = `Transport Layer: Added port info → "${d}|${ports}"`;
+            return d + "|" + ports; 
+        }},
+        {layer: "Network", desc: "", func: d => { 
+            const ips = "SRC:192.168.1.2|DST:192.168.1.10"; 
+            transformations[4].desc = `Network Layer: Added IP addresses → "${d}|${ips}"`;
+            return d + "|" + ips; 
+        }},
+        {layer: "Data Link", desc: "", func: d => { 
+            const macs = "SRC:AA:BB:CC:DD|DST:EE:FF:11:22"; 
+            transformations[5].desc = `Data Link Layer: Added MAC addresses → "${d}|${macs}"`;
+            return d + "|" + macs; 
+        }},
+        {layer: "Physical", desc: "", func: d => { 
+            const binary = d.split('').map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
+            transformations[6].desc = `Physical Layer: Converted to binary → "${binary}"`;
+            return binary; 
+        }},
+    ];
+
+    sendLayers.forEach((layerId, i) => {
+        setTimeout(() => {
+            highlightLayer(sendLayers, layerId);
+            movePacketToLayer(layerId);
+            data = transformations[i].func(data);
+            explanation.innerText = transformations[i].desc;
+        }, delay);
+        delay += 1600;
+    });
+
+    recvLayers.forEach((layerId, i) => {
+        setTimeout(() => {
+            highlightLayer(recvLayers, layerId);
+            movePacketToLayer(layerId);
+            switch(i){
+                case 0: explanation.innerText = "Physical Layer: Received binary data"; break;
+                case 1: explanation.innerText = "Data Link Layer: Removed MAC addresses"; break;
+                case 2: explanation.innerText = "Network Layer: Removed IP addresses"; break;
+                case 3: explanation.innerText = "Transport Layer: Removed port info"; break;
+                case 4: explanation.innerText = "Session Layer: Removed session ID"; break;
+                case 5: explanation.innerText = `Presentation Layer: Decoded Base64 → "${atob(message)}"`; break;
+                case 6: explanation.innerText = `Application Layer: Original message restored → "${message}"`; break;
+            }
+        }, delay);
+        delay += 1600;
+    });
+}
+
+function highlightLayer(allLayers, activeLayer) {
+    allLayers.forEach(l => document.getElementById(l).classList.remove("active"));
+    document.getElementById(activeLayer).classList.add("active");
+}
+
+/* 🏳️ Dynamically moves the packet to the highlighted layer’s real screen position */
+function movePacketToLayer(layerId) {
+    const layer = document.getElementById(layerId);
+    const rect = layer.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+    // Center the packet with the layer box
+    const top = rect.top + scrollTop + rect.height / 2 - 20; 
+    const left = rect.left + rect.width / 2 - 10;
+
+    packet.style.position = "absolute";
+    packet.style.top = `${top}px`;
+    packet.style.left = `${left}px`;
+}
+</script>
+
+</body>
+</html>
